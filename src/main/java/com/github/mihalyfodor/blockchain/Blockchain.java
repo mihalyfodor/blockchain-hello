@@ -13,27 +13,34 @@ import java.util.List;
  *
  */
 public class Blockchain {
-
+	
 	private List<Block> blockchain = new ArrayList<Block>();
 	
 	/**
 	 * Initialize the chain with a genesis block.
+	 * 
+	 * @return genesis block
 	 */
-	public void initializeChain() {
-		blockchain.add(new Block("Genesis Block", "0"));
+	public Block initializeChain() {
+		Block genesisBlock = new Block("Genesis Block", "0");
+		blockchain.add(genesisBlock);
+		return genesisBlock;
 	}
 	
 	/**
 	 * Add a block to the chain with the given data. Will only work if the chain is not empty.
 	 * 
 	 * @param data data to add
+	 * @return the newly added block
 	 */
-	public void addBlock(String data) {
+	public Block addBlock(String data) {
 		if (!blockchain.isEmpty()) {
 			Block prevBlock = blockchain.get(blockchain.size()-1);
 			Block newBlock = new Block(data, prevBlock.getHash());
 			blockchain.add(newBlock);
+			return newBlock;
 		}
+		return initializeChain();
 	}
 	
 	
@@ -42,6 +49,7 @@ public class Blockchain {
 	 * traverse the chain with two variables, and compare the hashes as follows:
 	 * - the hashcode needs to be able to be regenerated
 	 * - the prevHash codes need to be continuous
+	 * - the block must have been mined if not genesis block
 	 * 
 	 * @return chain validity
 	 */
@@ -67,7 +75,10 @@ public class Blockchain {
 			// similarly if the previous hash reference is incorrect it is also a problem
 			boolean prevHashCorrect = prevBlock.getHash().equals(currentBlock.getPreviousHash());
 			
-			if (!currentHashCorrect || !prevHashCorrect) {
+			// also each block must have been mined for the chain to be valid
+			boolean hashMinedCorrectly = currentBlock.getHash().substring( 0, Block.LEADING_ZEROES.length()).equals(Block.LEADING_ZEROES);
+			
+			if (!currentHashCorrect || !prevHashCorrect || !hashMinedCorrectly) {
 				return false;
 			}
 			

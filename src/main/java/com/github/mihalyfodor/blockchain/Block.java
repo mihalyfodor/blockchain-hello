@@ -16,6 +16,11 @@ import com.google.common.hash.Hashing;
  * @author Mihaly Fodor
  */
 public class Block {
+	
+	/**
+	 * Leading zeroes used for verifying proof of work.
+	 */
+	public static String LEADING_ZEROES = "00000";
 
 	/**
 	 * Digital signature of the block.
@@ -36,6 +41,11 @@ public class Block {
 	 * Timestamp of when the block was created. Used in generating the digital signature.
 	 */
 	private long timestamp;
+	
+	/**
+	 * Small flag we use to generate a different hash when mining.
+	 */
+	private int delta;
 
 	public Block(String data, String previousHash) {
 		super();
@@ -54,8 +64,25 @@ public class Block {
 	 * @return
 	 */
 	public String calculateHash() {
-		return Hashing.sha256().hashString(previousHash + data + timestamp, StandardCharsets.UTF_8)
+		return Hashing.sha256().hashString(previousHash + data + timestamp + delta, StandardCharsets.UTF_8)
 				.toString();
+	}
+	
+	/**
+	 * Mining a Block using Proof of Work.
+	 * 
+	 * Essentially proof of work is solving a problem to create a new block. We can understand that as
+	 * generating a new hashcode, still based on the basic fields, until we get one that has a given
+	 * number of leading zeroes.
+	 */
+	public void mineBlock() {
+		System.out.println("Mining block ");
+		while(!hash.substring( 0, LEADING_ZEROES.length()).equals(LEADING_ZEROES)) {
+			delta ++;
+			hash = calculateHash();
+		}
+		System.out.println("Block Mined!!! : " + hash);
+		
 	}
 	
 	/**

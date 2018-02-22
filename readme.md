@@ -104,4 +104,26 @@ public Boolean isChainValid() {
 	return true;
 }
 ```
-If we have just the genesis block, that is valid. Otherwise we traverse the chain with two variables, and compare the hashes as described above,
+If we have just the genesis block, that is valid. Otherwise we traverse the chain with two variables, and compare the hashes as described above.
+
+## Mining
+
+Mining a block is mostly understood as doing some amount of work before we consider a block as being valid. This is called proof of work. One simple way of doing this is repeatedly generating hashes until we hit one with a set amount of leading zeroes.
+
+We will need the following method on the Block class:
+
+```
+public void mineBlock() {
+	while(!hash.substring( 0, LEADING_ZEROES.length()).equals(LEADING_ZEROES)) {
+		delta ++;
+		hash = calculateHash();
+	}
+}
+```
+Delta is a new integer field used to ensure a new hash on a new try. It is concatenated to the other fields inside the calculateHash() method. We also need to update our validateChain, as we need to check that each block was mined correctly:
+
+```
+boolean hashMinedCorrectly = currentBlock.getHash().substring( 0, Block.LEADING_ZEROES.length()).equals(Block.LEADING_ZEROES);
+```
+
+Running the unit tests at this time will show a better representation of the blockchain, as each block will take some time to mine.

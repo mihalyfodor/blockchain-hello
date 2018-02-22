@@ -34,26 +34,41 @@ public class BlockchainTest {
 	public void testChain() {
 		Blockchain blockchain = new Blockchain();
 		blockchain.initializeChain();
-		blockchain.addBlock("2");
-		blockchain.addBlock("3");
-		blockchain.addBlock("4");
+		blockchain.addBlock("2").mineBlock();
+		blockchain.addBlock("3").mineBlock();
+		blockchain.addBlock("4").mineBlock();
 		
 		Assert.assertTrue(blockchain.isChainValid());
 		prettyPrint(blockchain);
 	}
 	
 	/**
-	 * Also tampering with the chain should result in it beeing invalid.
+	 * Also tampering with the chain should result in it being invalid.
 	 */
 	@Test
 	public void testChainTampering() {
 		Blockchain blockchain = new Blockchain();
 		blockchain.initializeChain();
-		blockchain.addBlock("2");
-		blockchain.addBlock("3");
-		blockchain.addBlock("4");
+		blockchain.addBlock("2").mineBlock();
+		blockchain.addBlock("3").mineBlock();
+		blockchain.addBlock("4").mineBlock();
 		
 		blockchain.getBlockchain().get(1).setData("Lots of Coins");
+		
+		Assert.assertFalse(blockchain.isChainValid());
+		prettyPrint(blockchain);
+	}
+	
+	/**
+	 * Not mining a block means the chain is invalid.
+	 */
+	@Test
+	public void testChainNotMined() {
+		Blockchain blockchain = new Blockchain();
+		blockchain.initializeChain();
+		blockchain.addBlock("2").mineBlock();
+		blockchain.addBlock("3");
+		blockchain.addBlock("4").mineBlock();
 		
 		Assert.assertFalse(blockchain.isChainValid());
 		prettyPrint(blockchain);
