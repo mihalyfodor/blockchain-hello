@@ -4,6 +4,9 @@
 package com.github.mihalyfodor.blockchain;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
@@ -46,7 +49,6 @@ public class TransactionTest {
 		// lets send someone some money
 		Block genesisBlock = sendSomeMoneyFromThinAir();
 		
-		// thin air is weird
 		assertEquals(bank.getBalance(), 0);
 		assertEquals(walletA.getBalance(), 100);
 		assertEquals(walletB.getBalance(), 0);
@@ -100,28 +102,50 @@ public class TransactionTest {
 	}
 	
 	private Block sendMoneyAtoB(Block genesisBlock) {
+		
 		printStatusBefore("Money from A to B");
 		Block block1 = new Block(genesisBlock.getHash());
-		block1.addTransaction(walletA.sendCoins(walletB.getAddress(), 40));
+		
+		Transaction tx = walletA.sendCoins(walletB.getAddress(), 40);
+		assertNotNull(tx);
+		
+		boolean txSuccesful = block1.addTransaction(tx);
+		assertTrue(txSuccesful);
+		
 		blockChain.addBlock(block1);
 		printStatusAfter();
+		
 		return block1;
 	}
 
 	private Block sendMoneyAtoBfails(Block block1) {
+		
 		printStatusBefore("Money from A to B whilst not having enough");
 		Block block2 = new Block(block1.getHash());
-		block2.addTransaction(walletA.sendCoins(walletB.getAddress(), 1000));
+		
+		Transaction tx = walletA.sendCoins(walletB.getAddress(), 1000);
+		assertNull(tx);
+		
+		boolean txSuccesful = block2.addTransaction(tx);
+		assertFalse(txSuccesful);
+		
 		blockChain.addBlock(block2);
 		printStatusAfter();
+		
 		return block2;
 	}
 
 	private void sendMoneyBtoA(Block block2) {
+		
 		printStatusBefore("Money from B to A");
 		Block block3 = new Block(block2.getHash());
-		block3.addTransaction(walletB.sendCoins(walletA.getAddress(), 20));
-		blockChain.addBlock(block3);
+		
+		Transaction tx = walletB.sendCoins(walletA.getAddress(), 20);
+		assertNotNull(tx);
+		
+		boolean txSuccesful = block3.addTransaction(tx);
+		assertTrue(txSuccesful);
+		
 		printStatusAfter();
 	}
 
