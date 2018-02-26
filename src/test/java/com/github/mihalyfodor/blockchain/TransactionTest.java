@@ -46,8 +46,9 @@ public class TransactionTest {
 		// lets send someone some money
 		Block genesisBlock = sendSomeMoneyFromThinAir();
 		
-		assertEquals(bank.getBalance(), -100);
-		assertEquals(walletA.getBalance(), 200);
+		// thin air is weird
+		assertEquals(bank.getBalance(), 0);
+		assertEquals(walletA.getBalance(), 100);
 		assertEquals(walletB.getBalance(), 0);
 		
 		Block block1 = sendMoneyAtoB(genesisBlock);

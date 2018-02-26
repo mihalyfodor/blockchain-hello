@@ -34,7 +34,7 @@ public class Blockchain {
 	/**
 	 * Leading zeroes used for verifying proof of work.
 	 */
-	public static final String LEADING_ZEROES = "000000";
+	public static final String LEADING_ZEROES = "00000";
 	
 	
 	/**
@@ -58,7 +58,7 @@ public class Blockchain {
 	 * @param targetWallet the wallet of a lucky person
 	 * @param coins the amount of coins we send
 	 * 
-	 * @return the block created for the transaciton
+	 * @return the block created for the transaction
 	 */
 	public Block addOriginTransaction(Wallet originWallet, Wallet targetWallet, int coins) {
 		
@@ -73,8 +73,8 @@ public class Blockchain {
 		Blockchain.unspentTransactionOutputs.put(genesisOutput.getId(), genesisOutput);
 		
 		Block genesisBlock = new Block(Blockchain.GENESIS_HASH);
-		genesisBlock.addTransaction(genesisTransaction);
-		this.addBlock(genesisBlock);
+		genesisBlock.getTransactions().add(genesisTransaction);
+		this.blockchain.add(genesisBlock);
 		
 		return genesisBlock;
 	}

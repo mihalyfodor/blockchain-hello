@@ -69,7 +69,7 @@ public class Transaction {
 	 */
 	public boolean processTransaction() {
 		
-		System.out.println("Processing transaction.");
+		System.out.println("Processing transaction " + this.transactionId);
 		
 		if (!this.veifySignature()) {
 			return false;
@@ -80,7 +80,7 @@ public class Transaction {
 			TransactionOutput unspentTransactionOutput = Blockchain.unspentTransactionOutputs.get(input.getTransactionOutputId());
 			// update the transaction output for an input
 			input.setUnspentTransactionOutput(unspentTransactionOutput);
-			System.out.println("Found money we can send: " + unspentTransactionOutput.getValue());
+			System.out.println("Found money we can send: " + unspentTransactionOutput.getValue() + " tx: " + unspentTransactionOutput.getId());
 		}
 		
 		// find out how much money we can send
@@ -90,8 +90,9 @@ public class Transaction {
 				                .sum();
 		
 		System.out.println("We have " + sumOfUnspentInputs + " that we can send");
-		
 		int leftOverValue = sumOfUnspentInputs - value;
+		System.out.println("That will leave us with " + leftOverValue);
+		
 		transactionId = calculateHash();
 
 		// send the money to the recipient
@@ -99,7 +100,6 @@ public class Transaction {
 		outputs.add(recipientReceived);
 		System.out.println("Sent output " + recipientReceived.getValue() + " to " + this.recipient);
 		
-		// send the change back to the sender
 		TransactionOutput senderReceived = new TransactionOutput(this.sender, leftOverValue, transactionId);
 		outputs.add(senderReceived);
 		System.out.println("Sent output " + senderReceived.getValue() + " to " + this.sender);
@@ -113,7 +113,8 @@ public class Transaction {
 		for (TransactionInput input : inputs) {
 			if (input.getUnspentTransactionOutput() != null) {
 				Blockchain.unspentTransactionOutputs.remove(input.getUnspentTransactionOutput().getId());
-				System.out.println("Removing " + input.getUnspentTransactionOutput().getValue() + " from sender's unspent list: " + input.getTransactionOutputId());
+				System.out.println("Removing " + input.getUnspentTransactionOutput().getValue()
+						+ " from sender's unspent list: " + input.getUnspentTransactionOutput().getId());
 			}
 		}
 		

@@ -96,11 +96,14 @@ public class Wallet {
 		
 		int total = 0;
 		for (TransactionOutput output: Blockchain.unspentTransactionOutputs.values()) {
-			total = total + output.getValue();
-			inputs.add(new TransactionInput(output.getId()));
 			
-			if (total > value) {
-				break;
+			if (output.isOwnedBy(this.getAddress())) {
+				total = total + output.getValue();
+				inputs.add(new TransactionInput(output.getId()));
+				
+				if (total > value) {
+					break;
+				}
 			}
 		}
 		return inputs;
