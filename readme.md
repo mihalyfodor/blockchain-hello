@@ -1,7 +1,6 @@
 # Let's build a Blockchain
 
 I was interested in the technology for a while now, so after reading a couple of articles and guides I decided to roll my own.
-This will be split into sections, so if anyone wants to follow it will be easier to do so.
 
 ## Blocks and Chains
 
@@ -10,7 +9,7 @@ For us that means we need to have an immutable and sequential chain of records s
 
 ### Blocks
 
-A Block is a simle Java class in our case, with a couple of important fields:
+A Block is a simple Java class in our case, with a couple of important fields:
 
 * hash: storing the digital signature of our block
 * previousHash: storing the digital signature of the previous block
@@ -127,3 +126,107 @@ boolean hashMinedCorrectly = currentBlock.getHash().substring( 0, Block.LEADING_
 ```
 
 Running the unit tests at this time will show a better representation of the blockchain, as each block will take some time to mine.
+
+## Wallet and Transactions
+
+We need a representation of the money (coins) we own. This can be a wallet, with an address and the money we still have. The address can be a string for now, and the coins we have can be the sum of all the transactions we received that we did not spend. This way we can find out how many coins we have:
+
+```
+public int getBalance() {
+	int balance = 0;
+	for (TransactionOutput output: Blockchain.unspentTransactionOutputs.values()) {
+		if (output.isOwnedBy(this.address)) {
+			this.unspentTransactionOutputs.put(output.getId(), output);
+			balance = balance + output.getValue();
+		}
+	}
+	return balance;
+}
+```
+We can ask for all the transactions from the blockcain, check if we own it, and if yes then add it to our tally. We also need to build a list of our known transactions, as it will be the input for the transaction we create when sending coins. We are selecting the minimum amount of transactions we need to use up in order to send coins:
+
+```
+private List<TransactionInput> gatherTransactionInputs(int value) {
+	List<TransactionInput> inputs = new ArrayList<TransactionInput>();
+	int total = 0;
+	for (TransactionOutput output: Blockchain.unspentTransactionOutputs.values()) {
+		if (output.isOwnedBy(this.getAddress())) {
+			total = total + output.getValue();
+			inputs.add(new TransactionInput(output.getId()));
+			if (total > value) {
+				break;
+			}
+		}
+	}
+	return inputs;
+}
+
+```
+
+When we send coins to someone we can create a transaction with from, to and amount, along with the inputs we mentioned. Sending coins thus becomes:
+
+```
+public Transaction sendCoins(String recipient, int value) {
+	if (getBalance() < value) {
+		return null;
+	}
+	List<TransactionInput> inputs = gatherTransactionInputs(value);
+	Transaction transaction = new Transaction(this.address, recipient, value, inputs);
+	transaction.generateSignature();
+	for (TransactionInput input: inputs) {
+		unspentTransactionOutputs.remove(input.getTransactionOutputId());
+	}
+	return transaction;
+}
+```
+If we have a transaction created from a wallet, we need to process it. This is done when adding the transaction to the blockchain. If the transaction is valid we can create the necessary inputs and outputs to shuffle the coins around:
+1. if the signature verification fails, we cannot proceed
+2. we collect all the transaction outputs given by the sender as inputs for the transaction
+3. we calculate how much money we need to send and how much remains, based on the above transactions
+4. we send the intended amount to the recipient
+5. we send the leftover back to the sender
+6. we remove the input transactions from the unspent transactions list
+The code for the above looks like this:
+
+```
+public boolean processTransaction() {
+	if (!this.veifySignature()) {
+		return false;
+	}
+		
+	for (TransactionInput input : inputs) {
+		TransactionOutput unspentTransactionOutput = Blockchain.unspentTransactionOutputs.get(input.getTransactionOutputId());
+		input.setUnspentTransactionOutput(unspentTransactionOutput);
+	}
+		
+	int sumOfUnspentInputs = inputs.stream()
+			                .filter(e -> e.getUnspentTransactionOutput() != null)
+			                .mapToInt(e -> e.getUnspentTransactionOutput().getValue())
+			                .sum();
+		
+	int leftOverValue = sumOfUnspentInputs - value;
+	transactionId = calculateHash();
+	TransactionOutput recipientReceived = new TransactionOutput(this.recipient, value, transactionId);
+	outputs.add(recipientReceived);
+	TransactionOutput senderReceived = new TransactionOutput(this.sender, leftOverValue, transactionId);
+	outputs.add(senderReceived);
+		
+	for (TransactionOutput output : outputs) {
+		Blockchain.unspentTransactionOutputs.put(output.getId(), output);
+	}
+		
+	for (TransactionInput input : inputs) {
+		if (input.getUnspentTransactionOutput() != null) {
+			Blockchain.unspentTransactionOutputs.remove(input.getUnspentTransactionOutput().getId());
+		}
+	}
+	return true;
+}
+	
+```
+
+## Sources
+I was interested in looking into how one can build a blockchain, so I started looking for existing resources:
+* [Blockchain in python](https://hackernoon.com/learn-blockchains-by-building-one-117428612f46)
+* [Blockchain in Java, with Crypto included](https://medium.com/programmers-blockchain/create-simple-blockchain-java-tutorial-from-scratch-6eeed3cb03fa)
+* [Simple theory](http://ccwikia.com/the-ultimate-3500-word-plain-english-guide-to-blockchain/)
