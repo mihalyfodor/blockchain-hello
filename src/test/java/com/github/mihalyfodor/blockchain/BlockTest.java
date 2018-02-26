@@ -23,15 +23,15 @@ public class BlockTest {
 	@Test
 	public void testBlock() {
 		// Creating genesis block
-		Block genesisBlock = new Block("First block!", "0");
+		Block genesisBlock = new Block("0");
 		Assert.assertNotEquals(genesisBlock.getHash(), "0");
 		prettyPrint(genesisBlock);
 		
-		Block secondBlock = new Block("Second", genesisBlock.getHash());
+		Block secondBlock = new Block(genesisBlock.getHash());
 		Assert.assertNotEquals(genesisBlock.getHash(), secondBlock.getHash());
 		prettyPrint(secondBlock);
 		
-		Block thirdBlock = new Block("Third", genesisBlock.getHash());
+		Block thirdBlock = new Block(genesisBlock.getHash());
 		Assert.assertNotEquals(secondBlock.getHash(), thirdBlock.getHash());
 		prettyPrint(thirdBlock);
 		

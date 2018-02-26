@@ -4,7 +4,9 @@
 package com.github.mihalyfodor.blockchain;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * The Blockchain containing our Blocks.
@@ -14,7 +16,26 @@ import java.util.List;
  */
 public class Blockchain {
 	
+	/**
+	 * Storing our blocks in a list.
+	 */
 	private List<Block> blockchain = new ArrayList<Block>();
+	
+	/**
+	 * Keeping track of all the transaction outputs that have not been spent.
+	 */
+	public static Map<String, TransactionOutput> unspentTransactionOutputs = new HashMap<String, TransactionOutput>();
+	
+	/**
+	 * The hash code of the very first transaction that we create.
+	 */
+	public static final String GENESIS_HASH = "0";
+	
+	/**
+	 * Leading zeroes used for verifying proof of work.
+	 */
+	public static final String LEADING_ZEROES = "000000";
+	
 	
 	/**
 	 * Initialize the chain with a genesis block.
@@ -22,8 +43,39 @@ public class Blockchain {
 	 * @return genesis block
 	 */
 	public Block initializeChain() {
-		Block genesisBlock = new Block("Genesis Block", "0");
+		Block genesisBlock = new Block(Blockchain.GENESIS_HASH);
 		blockchain.add(genesisBlock);
+		return genesisBlock;
+	}
+	
+	/**
+	 * Create the very first transaction. We need to set most of the fields manually
+	 * - create the transaction itself
+	 * - create the single output (we are creating money from nothing)
+	 * - create the block for it
+	 * 
+	 * @param originWallet the "Bank"'s wallet
+	 * @param targetWallet the wallet of a lucky person
+	 * @param coins the amount of coins we send
+	 * 
+	 * @return the block created for the transaciton
+	 */
+	public Block addOriginTransaction(Wallet originWallet, Wallet targetWallet, int coins) {
+		
+		System.out.println("creating origin cash");
+		
+		Transaction genesisTransaction = new Transaction(originWallet.getAddress(), targetWallet.getAddress(), coins, new ArrayList<>());
+		genesisTransaction.generateSignature();
+		genesisTransaction.setTransactionId(GENESIS_HASH);
+		
+		TransactionOutput genesisOutput = new TransactionOutput(genesisTransaction.getRecipient(), genesisTransaction.getValue(), genesisTransaction.getTransactionId());
+		genesisTransaction.getOutputs().add(genesisOutput);
+		Blockchain.unspentTransactionOutputs.put(genesisOutput.getId(), genesisOutput);
+		
+		Block genesisBlock = new Block(Blockchain.GENESIS_HASH);
+		genesisBlock.addTransaction(genesisTransaction);
+		this.addBlock(genesisBlock);
+		
 		return genesisBlock;
 	}
 	
@@ -33,14 +85,10 @@ public class Blockchain {
 	 * @param data data to add
 	 * @return the newly added block
 	 */
-	public Block addBlock(String data) {
-		if (!blockchain.isEmpty()) {
-			Block prevBlock = blockchain.get(blockchain.size()-1);
-			Block newBlock = new Block(data, prevBlock.getHash());
-			blockchain.add(newBlock);
-			return newBlock;
-		}
-		return initializeChain();
+	public Block addBlock(Block block) {
+		block.mineBlock();
+		blockchain.add(block);
+		return block;
 	}
 	
 	
@@ -76,7 +124,7 @@ public class Blockchain {
 			boolean prevHashCorrect = prevBlock.getHash().equals(currentBlock.getPreviousHash());
 			
 			// also each block must have been mined for the chain to be valid
-			boolean hashMinedCorrectly = currentBlock.getHash().substring( 0, Block.LEADING_ZEROES.length()).equals(Block.LEADING_ZEROES);
+			boolean hashMinedCorrectly = currentBlock.getHash().substring( 0, Blockchain.LEADING_ZEROES.length()).equals(Blockchain.LEADING_ZEROES);
 			
 			if (!currentHashCorrect || !prevHashCorrect || !hashMinedCorrectly) {
 				return false;

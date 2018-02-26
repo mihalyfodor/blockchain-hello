@@ -4,6 +4,8 @@
 package com.github.mihalyfodor.blockchain;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.google.common.hash.Hashing;
 
@@ -17,10 +19,7 @@ import com.google.common.hash.Hashing;
  */
 public class Block {
 	
-	/**
-	 * Leading zeroes used for verifying proof of work.
-	 */
-	public static String LEADING_ZEROES = "00000";
+	
 
 	/**
 	 * Digital signature of the block.
@@ -32,10 +31,7 @@ public class Block {
 	 */
 	private String previousHash;
 
-	/**
-	 * Data we want to store on the block. Will be coins later :)
-	 */
-	private String data;
+	private List<Transaction> transactions = new ArrayList<>();
 	
 	/**
 	 * Timestamp of when the block was created. Used in generating the digital signature.
@@ -47,12 +43,10 @@ public class Block {
 	 */
 	private int delta;
 
-	public Block(String data, String previousHash) {
-		super();
+	public Block(String previousHash) {
 		this.previousHash = previousHash;
-		this.data = data;
 		this.timestamp = System.currentTimeMillis();
-		this.setHash(calculateHash());
+		this.hash = calculateHash();
 	}
 
 	/**
@@ -64,7 +58,7 @@ public class Block {
 	 * @return
 	 */
 	public String calculateHash() {
-		return Hashing.sha256().hashString(previousHash + data + timestamp + delta, StandardCharsets.UTF_8)
+		return Hashing.sha256().hashString(previousHash + transactions.hashCode() + timestamp + delta, StandardCharsets.UTF_8)
 				.toString();
 	}
 	
@@ -77,12 +71,39 @@ public class Block {
 	 */
 	public void mineBlock() {
 		System.out.println("Mining block ");
-		while(!hash.substring( 0, LEADING_ZEROES.length()).equals(LEADING_ZEROES)) {
+		while(!hash.substring( 0, Blockchain.LEADING_ZEROES.length()).equals(Blockchain.LEADING_ZEROES)) {
 			delta ++;
 			hash = calculateHash();
 		}
 		System.out.println("Block Mined!!! : " + hash);
 		
+	}
+	
+	/**
+	 * Add a transaction to the block and mine it. Won't work if the transaction fails when processing
+	 * or we are attempting to add a transaction to the genesis block.
+	 * 
+	 * @param transaction the transaction we are adding.
+	 * @return transaction processing and adding successful not
+	 */
+	public boolean addTransaction(Transaction transaction) {
+		
+		System.out.println("Adding transaction to block");
+		
+		if (transaction == null) {
+			return false;
+		}
+		
+		boolean isGenesisBlock = previousHash.equals(Blockchain.GENESIS_HASH);
+		boolean transactionSuccesful = transaction.processTransaction();
+		
+		if ( isGenesisBlock || !transactionSuccesful ) {
+			return false;
+		}
+		
+		transactions.add(transaction);
+		
+		return true;
 	}
 	
 	/**
@@ -114,17 +135,17 @@ public class Block {
 	}
 
 	/**
-	 * @return the data
+	 * @return the transactions
 	 */
-	public String getData() {
-		return data;
+	public List<Transaction> getTransactions() {
+		return transactions;
 	}
 
 	/**
-	 * @param data the data to set
+	 * @param transactions the transactions to set
 	 */
-	public void setData(String data) {
-		this.data = data;
+	public void setTransactions(List<Transaction> transactions) {
+		this.transactions = transactions;
 	}
 
 	/**
